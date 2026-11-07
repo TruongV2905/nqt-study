@@ -6,6 +6,20 @@ function normalizeEmail(email: string) {
   return email.trim();
 }
 
+function throwAuthError(error: { code?: string; status?: number; message: string } | null) {
+  if (!error) return;
+  if (error.code === "over_email_send_rate_limit") {
+    throw new Error("Supabase đã hết hạn mức gửi email. Hãy dùng email gần nhất, chờ tối đa 1 giờ hoặc cấu hình Custom SMTP cho production.");
+  }
+  if (error.code === "over_request_rate_limit" || error.status === 429) {
+    throw new Error("Bạn đã gửi quá nhiều yêu cầu. Hãy chờ vài phút rồi thử lại.");
+  }
+  if (error.code === "email_address_not_authorized") {
+    throw new Error("Dịch vụ email mặc định của Supabase không cho phép gửi tới địa chỉ này. Hãy cấu hình Custom SMTP.");
+  }
+  throw error;
+}
+
 export function syncLearnerSession(userId?: string) {
   sessionInitialization = userId ? Promise.resolve(userId) : null;
 }
@@ -40,7 +54,7 @@ export async function linkRecoveryEmail({ email, redirectTo }: { email: string; 
     { email: normalizeEmail(email) },
     { emailRedirectTo: redirectTo }
   );
-  if (error) throw error;
+  throwAuthError(error);
   return data.user;
 }
 
@@ -52,5 +66,5 @@ export async function sendRecoverySignInLink({ email, redirectTo }: { email: str
       emailRedirectTo: redirectTo,
     },
   });
-  if (error) throw error;
+  throwAuthError(error);
 }
