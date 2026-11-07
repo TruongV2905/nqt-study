@@ -6,6 +6,10 @@ function normalizeEmail(email: string) {
   return email.trim();
 }
 
+export function syncLearnerSession(userId?: string) {
+  sessionInitialization = userId ? Promise.resolve(userId) : null;
+}
+
 export function ensureLearnerSession() {
   if (sessionInitialization) return sessionInitialization;
   sessionInitialization = (async () => {
